@@ -9,14 +9,25 @@ MAX_EOL = 2
 socket = TCPServer.new(ENV['HOST'], ENV['PORT'])
 
 def handle_request(request_text, client)
-  request  = Request.new(request_text)
+  request = Request.new(request_text)
   puts "#{client.peeraddr[3]} #{request.path}"
 
-  response = Response.new(code: 200, data: "Hello, world!")
+  dirname = Dir.getwd
+  filepath = "#{dirname}#{request.path}"
 
+  file_content = nil
+
+  File.open(filepath, "r") do |file|
+    file_content = file.read
+  end
+
+  output = file_content.nil? ? "Hello world" : file_content
+
+  response = Response.new(code: 200, data: output)
   response.send(client)
 
   client.shutdown
+  puts e
 end
 
 def handle_connection(client)
@@ -35,9 +46,14 @@ def handle_connection(client)
       handle_request(request_text, client)
       break
     end
-
-    sleep 1
   end
+rescue Errno::ENOENT => e
+  puts "Error: #{e}"
+
+  response = Response.new(code: 404, data: "File Not Found")
+  response.send(client)
+
+  client.close
 rescue => e
   puts "Error: #{e}"
 
@@ -54,4 +70,3 @@ loop do
     handle_connection(client)
   end
 end
-
