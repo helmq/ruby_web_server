@@ -8,26 +8,33 @@ MAX_EOL = 2
 
 socket = TCPServer.new(ENV['HOST'], ENV['PORT'])
 
-def handle_request(request_text, client)
-  request = Request.new(request_text)
-  puts "#{client.peeraddr[3]} #{request.path}"
-
+def file_path(request)
   dirname = Dir.getwd
-  filepath = "#{dirname}#{request.path}"
 
+  "#{dirname}#{request.path}"
+end
+
+def create_output(filepath)
   file_content = nil
 
   File.open(filepath, "r") do |file|
     file_content = file.read
   end
 
-  output = file_content.nil? ? "Hello world" : file_content
+  file_content.nil? ? "Hello world" : file_content
+end
+
+def handle_request(request_text, client)
+  request = Request.new(request_text)
+  puts "#{client.peeraddr[3]} #{request.path}"
+
+  filepath = file_path(request)
+  output = create_output(filepath)
 
   response = Response.new(code: 200, data: output)
   response.send(client)
 
   client.shutdown
-  puts e
 end
 
 def handle_connection(client)
